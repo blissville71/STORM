@@ -747,7 +747,7 @@ for simulations = 1:NUMSIMS %number of simulations to run. A separate timestampe
                 else
                 end
                 Storm_matrix(master_storm_count,4) = int_dur_curve_val;
-                intensity_val = lambda2(int_dur_curve_val)*exp(delta2*duration_val)+kappa2(int_dur_curve_val)*exp(gamma2*duration_val) + C(int_dur_curve_val);  %these curves are based on empirical data from WG.
+                intensity_val = lambda2(int_dur_curve_val)*exp(delta2*duration_val)+kappa2(int_dur_curve_val)*exp(gamma2*duration_val);  %these curves are based on empirical data from WG.
                 fuzz_int_val = datasample(fuzz,1);
                 intensity_val2 = intensity_val+fuzz_int_val; %allowing for +/-5 mm/hr fuzzy tolerance around selected intensity
                 if intensity_val2 < 0.5 %cannot have zero or negative intensity
