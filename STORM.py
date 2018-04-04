@@ -18,7 +18,7 @@ import time
 import numpy as np
 import datetime as date
 from matplotlib.path import Path
-from scipy.stats import genextreme
+from scipy.stats import genextreme, fisk
 from six.moves import range
 try:
     import shapefile as shp
@@ -27,7 +27,7 @@ except ImportError:
           'e.g., conda install pyshp or pip install pyshp')
     raise ImportError
 
-from matplotlib.pyplot import imshow, plot, show, scatter, axis
+from matplotlib.pyplot import imshow, plot, show, scatter, axis, figure
 
 PLOT_EACH_STORM = False
 # Use this to visualise every storm over the catchment. Warning: will be slow
@@ -372,23 +372,35 @@ def storm(mode, numsims, numsimyrs, seasons, ptot_scenario,
     # formatting will be 1D: shape_param, mu, sigma, low_trunc, hi_trunc
     # note this is different from the .mat file
     Duration_pdf_GEV = {'shape': -Duration_pdf[0], 'sigma': Duration_pdf[2],
-                        'mu': Duration_pdf[1],
-                        'trunc_interval': [Duration_pdf[3], Duration_pdf[4]]}
+                        'mu': Duration_pdf[1]}
+    try:
+        Duration_pdf_GEV['trunc_interval'] = [Duration_pdf[3],
+                                              Duration_pdf[4]]
+    except IndexError:
+        Duration_pdf_GEV['trunc_interval'] = [0., np.inf]
     # This is the pdf fitted to all available station duration data (GEV
     # dist). It will be sampled below.
     Area_pdf = np.loadtxt(os.path.join(datapath, 'Area_pdf.csv'))
     # formatting will be 1D: mu, sigma, low_trunc, hi_trunc
     Area_pdf_EV = {'shape': 0., 'sigma': Area_pdf[1],
-                   'mu': Area_pdf[0],
-                   'trunc_interval': [Area_pdf[2], Area_pdf[3]]}
+                   'mu': Area_pdf[0]}
+    try:
+        Area_pdf_EV['trunc_interval'] = [Area_pdf[2],
+                                         Area_pdf[3]]
+    except IndexError:
+        Area_pdf_EV['trunc_interval'] = [0., np.inf]
     # This is the pdf fitted to all available station area data (EV dist). It
     # will be sampled below.
     Int_arr_pdf = np.loadtxt(os.path.join(datapath, 'Int_arr_pdf.csv'))
     # formatting will be 1D: shape_param, mu, sigma, low_trunc, hi_trunc
     # note this is different from the .mat file
     Int_arr_pdf_GEV = {'shape': -Int_arr_pdf[0], 'sigma': Int_arr_pdf[2],
-                       'mu': Int_arr_pdf[1],
-                       'trunc_interval': [Int_arr_pdf[3], Int_arr_pdf[4]]}
+                       'mu': Int_arr_pdf[1]}
+    try:
+        Int_arr_pdf_GEV['trunc_interval'] = [Int_arr_pdf[3],
+                                             Int_arr_pdf[4]]
+    except IndexError:
+        Int_arr_pdf_GEV['trunc_interval'] = [0., np.inf]
     # This is the pdf fitted to all available station interarrival time data
     # (GEV dist). It will be sampled below.
 
@@ -404,15 +416,22 @@ def storm(mode, numsims, numsimyrs, seasons, ptot_scenario,
         beta_fisk = 1./Duration_pdf2[1]  # following WP's notation
         c_fisk = beta_fisk
         scale_fisk = np.exp(Duration_pdf2[0])
-        Duration_pdf_Fisk2 = {'c': c_fisk, 'scale': scale_fisk,
-                              'trunc_interval': [Duration_pdf2[2],
-                                                 Duration_pdf2[3]]}
+        Duration_pdf_Fisk2 = {'c': c_fisk, 'scale': scale_fisk}
+        try:
+            Duration_pdf_Fisk2['trunc_interval'] = [Duration_pdf2[2],
+                                                    Duration_pdf2[3]]
+        except IndexError:
+            Duration_pdf_Fisk2['trunc_interval'] = [0., np.inf]
         Area_pdf2 = np.loadtxt(os.path.join(datapath, 'Area_pdf2.csv'))
         # This is the pdf fitted for season2 to all available station area
         # data (EV dist). It will be sampled below.
         Area_pdf_EV2 = {'shape': 0., 'sigma': Area_pdf2[1],
-                        'mu': Area_pdf2[0],
-                        'trunc_interval': [Area_pdf2[2], Area_pdf2[3]]}
+                        'mu': Area_pdf2[0]}
+        try:
+            Area_pdf_EV2['trunc_interval'] = [Area_pdf2[2],
+                                                  Area_pdf2[3]]
+        except IndexError:
+            Area_pdf_EV2['trunc_interval'] = [0., np.inf]
         # This is the pdf fitted to all available station area data (EV dist).
         # It will be sampled below.
         Int_arr_pdf2 = np.loadtxt(os.path.join(datapath, 'Int_arr_pdf2.csv'))
@@ -420,9 +439,12 @@ def storm(mode, numsims, numsimyrs, seasons, ptot_scenario,
         # interarrival time data (GEV dist). It will be sampled below.
         Int_arr_pdf_GEV2 = {'shape': -Int_arr_pdf2[0],
                             'sigma': Int_arr_pdf2[2],
-                            'mu': Int_arr_pdf2[1],
-                            'trunc_interval': [Int_arr_pdf2[3],
-                                               Int_arr_pdf2[4]]}
+                            'mu': Int_arr_pdf2[1]}
+        try:
+            Int_arr_pdf_GEV2['trunc_interval'] = [Int_arr_pdf2[3],
+                                                  Int_arr_pdf2[4]]
+        except IndexError:
+            Int_arr_pdf_GEV2['trunc_interval'] = [0, np.inf]
         # This is the pdf fitted to all available station interarrival time
         # data (GEV dist). It will be sampled below.
         if ptot_scenario2 == 'ptot2C':
@@ -607,7 +629,12 @@ def storm(mode, numsims, numsimyrs, seasons, ptot_scenario,
           '_' + str(ptot_scenario2) + '_' + str(storminess_scenario2) + '_' +
           ET_scenario + '_')
     tx0 = os.path.join(cwd, 'model_output', tx) + t2
-    os.mkdir(tx0)
+    namecounter = 1
+    try:
+        os.mkdir(tx0)
+    except OSError:
+        tx0 += '_' + str(t1.second)  # adds differentiation if needed.
+        os.mkdir(tx0)
 
     for simulations in range(numsims):
         # number of simulations to run. A separate timestamped output folder
@@ -621,7 +648,7 @@ def storm(mode, numsims, numsimyrs, seasons, ptot_scenario,
         try:
             os.mkdir(tx2)
         except OSError:
-            tx2 += '_2ndsim'
+            tx2 += '_' + str(t1a.second)
             os.mkdir(tx2)
             # pass  # dir already exists
 
@@ -801,8 +828,8 @@ def storm(mode, numsims, numsimyrs, seasons, ptot_scenario,
                                              loc=Int_arr_pdf_GEV['mu'],
                                              scale=Int_arr_pdf_GEV['sigma'])
                 try:
-                    int_arr_val = np.clip(
-                        int_arr_val, Int_arr_pdf_GEV['trunc_interval'][0],
+                    int_arr_val = int_arr_val.clip(
+                        Int_arr_pdf_GEV['trunc_interval'][0],
                         Int_arr_pdf_GEV['trunc_interval'][1])
                 except KeyError:
                     pass
@@ -820,8 +847,8 @@ def storm(mode, numsims, numsimyrs, seasons, ptot_scenario,
                                           loc=Area_pdf_EV['mu'],
                                           scale=Area_pdf_EV['sigma'])
                 try:
-                    area_val = np.clip(
-                        area_val, Area_pdf_EV['trunc_interval'][0],
+                    area_val = area_val.clip(
+                        Area_pdf_EV['trunc_interval'][0],
                         Area_pdf_EV['trunc_interval'][1])
                 except KeyError:
                     pass
@@ -887,8 +914,8 @@ def storm(mode, numsims, numsimyrs, seasons, ptot_scenario,
                                               loc=Duration_pdf_GEV['mu'],
                                               scale=Duration_pdf_GEV['sigma'])
                 try:
-                    duration_val = np.clip(
-                        duration_val, Duration_pdf_GEV['trunc_interval'][0],
+                    duration_val = duration_val.clip(
+                        Duration_pdf_GEV['trunc_interval'][0],
                         Duration_pdf_GEV['trunc_interval'][1])
                 except KeyError:
                     pass
@@ -1080,8 +1107,8 @@ def storm(mode, numsims, numsimyrs, seasons, ptot_scenario,
                         loc=Int_arr_pdf_GEV2['mu'],
                         scale=Int_arr_pdf_GEV2['sigma'])
                     try:
-                        int_arr_val = np.clip(
-                            int_arr_val, Int_arr_pdf_GEV2['trunc_interval'][0],
+                        int_arr_val = int_arr_val.clip(
+                            Int_arr_pdf_GEV2['trunc_interval'][0],
                             Int_arr_pdf_GEV2['trunc_interval'][1])
                     except KeyError:
                         pass
@@ -1099,8 +1126,8 @@ def storm(mode, numsims, numsimyrs, seasons, ptot_scenario,
                                               loc=Area_pdf_EV2['mu'],
                                               scale=Area_pdf_EV2['sigma'])
                     try:
-                        area_val = np.clip(
-                            area_val, Area_pdf_EV2['trunc_interval'][0],
+                        area_val = area_val.clip(
+                            Area_pdf_EV2['trunc_interval'][0],
                             Area_pdf_EV2['trunc_interval'][1])
                     except KeyError:
                         pass
@@ -1165,12 +1192,11 @@ def storm(mode, numsims, numsimyrs, seasons, ptot_scenario,
                     elif closest_gauge in OroGrp3:
                         baa = 'c'
                     int_dur_curve_num = np.arange(numcurves, dtype=int)
-                    duration_val = genextreme.rvs(
+                    duration_val = fisk.rvs(
                         c=Duration_pdf_Fisk2['c'],
                         scale=Duration_pdf_Fisk2['scale'])
                     try:
-                        duration_val = np.clip(
-                            duration_val,
+                        duration_val = duration_val.clip(
                             Duration_pdf_Fisk2['trunc_interval'][0],
                             Duration_pdf_Fisk2['trunc_interval'][1])
                     except KeyError:
@@ -1409,14 +1435,22 @@ def storm(mode, numsims, numsimyrs, seasons, ptot_scenario,
         runtime_seconds = boo
         runtime_minutes = boo/60.
 
+########
+    return Storm_matrix_out, Gauge_matrix, Duration_all
 
 if __name__ == "__main__":
-    storm(mode='Validation', numsims=1, numsimyrs=2, seasons=1,
-          ptot_scenario='ptotC', storminess_scenario='stormsC',
-          ptot_scenario2=None, storminess_scenario2=None, ET_scenario='ETC')
+    # storm(mode='Validation', numsims=1, numsimyrs=2, seasons=1,
+    #       ptot_scenario='ptotC', storminess_scenario='stormsC',
+    #       ptot_scenario2=None, storminess_scenario2=None, ET_scenario='ETC')
 
     # # a slightly longer, more complex exercise of the code:
     # storm(mode='Simulation', numsims=2, numsimyrs=20, seasons=2,
     #       ptot_scenario='ptot+', storminess_scenario='stormsT-',
     #       ptot_scenario2='ptot2T-', storminess_scenario2='storms2+',
     #       ET_scenario='ET+')
+
+    SM, GM, Dur = storm(mode='Validation', numsims=1, numsimyrs=10, seasons=2,
+          ptot_scenario='ptotC', storminess_scenario='stormsC',
+          ptot_scenario2='ptot2C', storminess_scenario2='storms2C',
+          #ptot_scenario2=None, storminess_scenario2=None,
+          ET_scenario='ETC')
