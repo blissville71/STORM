@@ -1060,7 +1060,7 @@ def storm(mode, numsims, numsimyrs, seasons, ptot_scenario,
                     Storm_total_local_year[-1].copy())
                 # collect all local annual storm totals for each gauge.
                 # end of the storm loop
-            stormcount = storm  # + 1
+            stormcount = storm + 1
             ##################################################################
             # SEASON 2
             if seasons == 2:
