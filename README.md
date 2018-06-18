@@ -1,4 +1,4 @@
-# STORM
+# STORM 1.0
 STOchastic Rainstorm Model
 
 To understand how to run the code for particular basin, see detailed information in STORM.m code (Matlab) or STORM.py (Python).
