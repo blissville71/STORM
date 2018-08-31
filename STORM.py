@@ -336,34 +336,34 @@ def storm(mode, numsims, numsimyrs, seasons, ptot_scenario,
         Ptot_pdf = np.loadtxt(os.path.join(datapath, 'Ptot_pdf.csv'))
         # This is the pdf fitted to all available station precip data
         # (normal dist). It will be sampled below.
-        mu = np.mean(Ptot_pdf)
-        sigma = np.std(Ptot_pdf)
+        mu = Ptot_pdf[0]
+        sigma = Ptot_pdf[1]
     elif ptot_scenario == 'ptot+':
         Ptot_pdf_cc_up = np.loadtxt(os.path.join(
             datapath, 'Ptot_pdf_cc_up.csv'))
         # This is the pdf fitted to all available station
         # precip data (normal dist). It will be sampled below.
-        mu = np.mean(Ptot_pdf_cc_up)
-        sigma = np.std(Ptot_pdf_cc_up)
+        mu = Ptot_pdf_cc_up[0]
+        sigma = Ptot_pdf_cc_up[1]
     elif ptot_scenario == 'ptot-':
         Ptot_pdf_cc_down = np.loadtxt(os.path.join(
             datapath, 'Ptot_pdf_cc_down.csv'))
         # This is the pdf fitted to all available station
         # precip data (normal dist). It will be sampled below.
-        mu = np.mean(Ptot_pdf_cc_down)
-        sigma = np.std(Ptot_pdf_cc_down)
+        mu = Ptot_pdf_cc_down[0]
+        sigma = Ptot_pdf_cc_down[1]
     elif ptot_scenario == 'ptotT+':
         Ptot_pdf = np.loadtxt(os.path.join(datapath, 'Ptot_pdf.csv'))
         # This is the pdf fitted to all available station precip data
         # (normal dist). It will be modified as a trend and sampled below.
-        mu = np.mean(Ptot_pdf)
-        sigma = np.std(Ptot_pdf)
+        mu = Ptot_pdf[0]
+        sigma = Ptot_pdf[1]
     elif ptot_scenario == 'ptotT-':
         Ptot_pdf = np.loadtxt(os.path.join(datapath, 'Ptot_pdf.csv'))
         # This is the pdf fitted to all available station precip data
         # (normal dist). It will be modified as a trend and sampled below.
-        mu = np.mean(Ptot_pdf)
-        sigma = np.std(Ptot_pdf)
+        mu = Ptot_pdf[0]
+        sigma = Ptot_pdf[1]
 
     # #### matlab's GEV is (shape_param, scale(sigma), pos(mu))
     # note that in Scipy, we must add a minus to the shape param for a GEV
@@ -579,9 +579,9 @@ def storm(mode, numsims, numsimyrs, seasons, ptot_scenario,
     #         oromin = orographic_limits[i-1]
     #         oromax = orographic_limits[i]
     #     Orogrp_list.append(np.arange(oromin, oromax, 1))
-    OroGrp1 = np.arange(int(round(min(Zz))), 1350+1, 1)
+    OroGrp1 = np.arange(int(np.floor(min(Zz))), 1350+1, 1)
     OroGrp2 = np.arange(1351, 1500+1, 1)
-    OroGrp3 = np.arange(1501, int(round(max(Zz))), 1)
+    OroGrp3 = np.arange(1501, int(np.ceil(max(Zz))), 1)
 
     # lambda, kappa, and C are parameters of the intensity-duration curves
     # from WGEW of the form:
@@ -767,7 +767,7 @@ def storm(mode, numsims, numsimyrs, seasons, ptot_scenario,
         #                 StormIntensity #GaugesHit RecessionVal StormTotal
         #                 UTM_Longitude UTM_Latitude Year SimTime]
         # The values in Storm_matrix have the following corresponding units:
-        # [# km^2 min # mm/hr mm/hr/km mm m m y hr]
+        # [# m^2 min # mm/hr mm/hr/km mm m m y hr]
 
         Storm_matrix = np.zeros((max_numstorms*numsimyrs, 12))
         # ^based on presumed maximum number of storms per year (see above)
@@ -1051,7 +1051,7 @@ def storm(mode, numsims, numsimyrs, seasons, ptot_scenario,
                 for stormtot in Storm_total_local_year:
                     Ptotal[:] += stormtot
                     # sum the annual storm total at each gauge
-                if np.nanmedian(Ptotal) > Ptot_ann_global2[syear]:
+                if np.nanmedian(Ptotal) > Ptot_ann_global[syear]:
                     # once the median of all gauges exceeds the selected annual
                     # storm total, a new simulation year begins
                     Ptotal_local.append(Ptotal.copy())
@@ -1170,7 +1170,7 @@ def storm(mode, numsims, numsimyrs, seasons, ptot_scenario,
                         gdist = (Easting[:]-cx)**2 + (Northing[:]-cy)**2
                     elif mode == 'Simulation':
                         gdist = (Xin[:]-cx)**2 + (Yin[:]-cy)**2
-                    closest_gauge = round(Zz[gdist.argmin()])
+                    closest_gauge = int(round(Zz[gdist.argmin()]))
                     # this will be compared against orographic gauge groupings
                     # to determine the appropriate set of intensity-duration
                     # curves
@@ -1449,8 +1449,9 @@ if __name__ == "__main__":
     #       ptot_scenario2='ptot2T-', storminess_scenario2='storms2+',
     #       ET_scenario='ET+')
 
-    SM, GM, Dur = storm(mode='Validation', numsims=1, numsimyrs=10, seasons=2,
+    SM, GM, Dur = storm(mode='Validation', numsims=1, numsimyrs=1, seasons=2,
           ptot_scenario='ptotC', storminess_scenario='stormsC',
+          # ptot_scenario2=None, storminess_scenario2=None,
           ptot_scenario2='ptot2C', storminess_scenario2='storms2C',
-          #ptot_scenario2=None, storminess_scenario2=None,
           ET_scenario='ETC')
+    print('Total number of storms:', SM.shape[0])
