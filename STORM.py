@@ -210,7 +210,7 @@ def storm(mode, numsims, numsimyrs, seasons, ptot_scenario,
     'Duration_data' Duration data (min) for use when mode = 'Validation'
     'fuzz' A vector of fuzzy tolerance values for intensity selection, assumed
         based on differences between PI-PD curves(mm/hr).
-    'bndry_buffer.shp' A shapefile of the watershed boundary buffer (5000 m).
+    'Bndry_buffer.shp' A shapefile of the watershed boundary buffer (5000 m).
         Used for storm center determination allowing for partial storm
         coverage.
     'ET_monthly_day' A matrix of daytime ET values organized with one month per
@@ -544,8 +544,8 @@ def storm(mode, numsims, numsimyrs, seasons, ptot_scenario,
     # column per month.
 
     Gauges = np.arange(numgauges, dtype=int)
-    print(os.path.join(datapath, 'bndry_buffer', 'bndry_buffer.shp'))
-    c = shp.Reader(os.path.join(datapath, 'bndry_buffer', 'bndry_buffer.shp'))
+    print(os.path.join(datapath, 'Bndry_buffer', 'Bndry_buffer.shp'))
+    c = shp.Reader(os.path.join(datapath, 'Bndry_buffer', 'Bndry_buffer.shp'))
     # This is a shapefile of the watershed boundary buffer (5000 m)
     coordsc = c.shapeRecords()[0].shape.__geo_interface__['coordinates'][0]
     Yyy = [Yi for (Xi, Yi) in coordsc]
@@ -631,10 +631,10 @@ def storm(mode, numsims, numsimyrs, seasons, ptot_scenario,
     tx0 = os.path.join(cwd, 'model_output', tx) + t2
     namecounter = 1
     try:
-        os.mkdir(tx0)
+        os.makedirs(tx0)
     except OSError:
         tx0 += '_' + str(t1.second)  # adds differentiation if needed.
-        os.mkdir(tx0)
+        os.makedirs(tx0)
 
     for simulations in range(numsims):
         # number of simulations to run. A separate timestamped output folder
